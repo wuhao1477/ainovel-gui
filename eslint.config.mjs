@@ -4,6 +4,9 @@ import reactHooksPlugin from 'eslint-plugin-react-hooks'
 
 export default [
   {
+    // eslint 9 展开目录时只按配置中声明过的扩展名收集文件，
+    // 这里显式声明 ts/tsx（等价于旧的 `--ext .ts,.tsx`，该 flag 已废弃）。
+    files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
