@@ -61,7 +61,7 @@ async function main() {
   }
 
   // Windows: .ico
-  generateIcoPlaceholder()
+  generateIco()
 
   // Linux: multi-size PNGs
   generateLinuxIcons()
@@ -91,20 +91,7 @@ async function generateWithSharp() {
   await sharp(svgBuffer).resize(256, 256).png().toFile(join(BUILD, 'icon.png'))
   console.log('  ✓ icon.png (256x256)')
 
-  // Windows: 将多个尺寸合成 ico
-  if (os.platform() === 'win32' || process.argv.includes('--ico')) {
-    try {
-      const sizes = [16, 32, 48, 64, 128, 256]
-      const sharpBuffers = await Promise.all(
-        sizes.map((s) => sharp(svgBuffer).resize(s, s).png().toBuffer())
-      )
-      // 用 png-to-ico 或直接复制最大尺寸
-      writeFileSync(join(BUILD, 'icon.ico'), sharpBuffers[sharpBuffers.length - 1])
-      console.log('  ✓ icon.ico (placeholder - use proper tool for multi-size)')
-    } catch (e) {
-      console.log('  ⚠ icon.ico generation skipped')
-    }
-  }
+  // icon.ico 统一由 generateIco() 从 icons/ 目录组装，此处不重复生成
 }
 
 function generatePlaceholder() {
@@ -173,18 +160,83 @@ function generateIcns() {
   })
 }
 
-function generateIcoPlaceholder() {
+// ICO 目录条目中宽高各占 1 字节，0 表示 256，因此 256 是上限（512 无法表达）。
+const ICO_SIZES = [16, 32, 64, 128, 256]
+
+/**
+ * 读取 PNG 的 IHDR 获取真实尺寸，用于校验文件名与内容一致。
+ * IHDR 固定位于偏移 8，宽高为偏移 16/20 处的大端 uint32。
+ */
+function readPngSize(buf) {
+  const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  if (buf.length < 24 || !buf.subarray(0, 8).equals(PNG_MAGIC)) return null
+  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) }
+}
+
+/**
+ * 由多尺寸 PNG 组装真正的 ICO 容器。
+ *
+ * 此前这里是把 256x256.png 直接改名成 icon.ico，字节仍是 PNG，
+ * rcedit 校验 ICO 头时报 "Reserved header is not 0 or image type is not icon"，
+ * Windows 打包必然失败。
+ *
+ * 采用 PNG 内嵌条目（Vista 起支持），与 electron-builder 自带 app-builder
+ * 产出的形式一致，故 rcedit 可正常解析。
+ */
+function generateIco() {
+  const iconsDir = join(BUILD, 'icons')
   const icoPath = join(BUILD, 'icon.ico')
-  if (!existsSync(icoPath)) {
-    // 使用 256x256 PNG 作为基础
-    const png256 = join(BUILD, 'icons', '256x256.png')
-    if (existsSync(png256)) {
-      copyFileSync(png256, icoPath)
-    } else {
-      // 创建最小占位
-      writeFileSync(icoPath, Buffer.alloc(0))
+
+  const entries = []
+  for (const size of ICO_SIZES) {
+    const src = join(iconsDir, `${size}x${size}.png`)
+    if (!existsSync(src)) continue
+    const data = readFileSync(src)
+    const actual = readPngSize(data)
+    if (!actual) {
+      console.log(`  ⚠ ${size}x${size}.png 不是有效 PNG，已跳过`)
+      continue
     }
+    if (actual.width !== size || actual.height !== size) {
+      console.log(
+        `  ⚠ ${size}x${size}.png 实际为 ${actual.width}x${actual.height}，已跳过`
+      )
+      continue
+    }
+    entries.push({ size, data })
   }
+
+  if (entries.length === 0) {
+    console.log('  ⚠ 无可用 PNG，icon.ico 未生成')
+    return
+  }
+
+  const HEADER_SIZE = 6
+  const DIR_ENTRY_SIZE = 16
+  let offset = HEADER_SIZE + DIR_ENTRY_SIZE * entries.length
+
+  const header = Buffer.alloc(HEADER_SIZE)
+  header.writeUInt16LE(0, 0) // reserved，必须为 0
+  header.writeUInt16LE(1, 2) // type：1=icon
+  header.writeUInt16LE(entries.length, 4)
+
+  const dir = []
+  for (const { size, data } of entries) {
+    const e = Buffer.alloc(DIR_ENTRY_SIZE)
+    e.writeUInt8(size === 256 ? 0 : size, 0) // width，0 表示 256
+    e.writeUInt8(size === 256 ? 0 : size, 1) // height
+    e.writeUInt8(0, 2) // 调色板颜色数，真彩色为 0
+    e.writeUInt8(0, 3) // reserved
+    e.writeUInt16LE(1, 4) // color planes
+    e.writeUInt16LE(32, 6) // 位深：RGBA
+    e.writeUInt32LE(data.length, 8)
+    e.writeUInt32LE(offset, 12)
+    offset += data.length
+    dir.push(e)
+  }
+
+  writeFileSync(icoPath, Buffer.concat([header, ...dir, ...entries.map((e) => e.data)]))
+  console.log(`  ✓ icon.ico (${entries.map((e) => e.size).join(', ')})`)
 }
 
 function generateLinuxIcons() {
