@@ -43,9 +43,14 @@ function runCli(binary: string, args: string[], opts: ExecFileSyncOptions = {}) 
   })
 }
 
+// 发布仓库（唯一源）：检查更新、下载清单、URL 白名单三处共用。
+// fork 本项目时只需改这一行，否则应用会拒绝自己仓库的产物。
+// 需与 package.json 的 repository 字段保持一致。
+const RELEASE_REPO = 'wuhao1477/ainovel-gui'
+
 // download-update URL 白名单：仅允许 GitHub 官方 releases 路径，防止 SSRF
 const ALLOWED_DOWNLOAD_HOST = 'github.com'
-const ALLOWED_DOWNLOAD_PATH_PREFIX = '/crazytreeChen/ainovel-gui/releases/download/'
+const ALLOWED_DOWNLOAD_PATH_PREFIX = `/${RELEASE_REPO}/releases/download/`
 
 function validateDownloadUrl(url: string) {
   try {
@@ -593,7 +598,7 @@ ${navItems}
   // ── 自动更新 ──
   ipcMain.handle('check-update', async () => {
     try {
-      const apiUrl = 'https://api.github.com/repos/crazytreeChen/ainovel-gui/releases/latest'
+      const apiUrl = `https://api.github.com/repos/${RELEASE_REPO}/releases/latest`
       const apiResp = await fetch(apiUrl, { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'ainovel-gui' }, signal: AbortSignal.timeout(10000) })
       if (!apiResp.ok) return { available: false, error: '无法获取最新版本信息 (HTTP ' + apiResp.status + ')' }
       const release = await apiResp.json()
@@ -602,12 +607,15 @@ ${navItems}
       // 尝试获取下载清单 — 404 时仍有版本信息
       let download = null
       try {
-        const manifestUrl = `https://github.com/crazytreeChen/ainovel-gui/releases/download/v${latestVersion}/download.json`
+        const manifestUrl = `https://github.com/${RELEASE_REPO}/releases/download/v${latestVersion}/download.json`
         const manifestResp = await fetch(manifestUrl, { signal: AbortSignal.timeout(5000) })
         if (manifestResp.ok) {
           const manifest = await manifestResp.json()
-          const platform = os.platform() === 'darwin' ? (os.arch() === 'arm64' ? 'mac-arm64' : 'mac-x64') : os.platform() === 'win32' ? 'win-x64' : 'linux-x64'
-          download = manifest.downloads?.[platform]
+          // 现在三平台均分发 x64/arm64（Windows 另有 ia32），按实际架构取键，
+          // 键名与 scripts/update-download-manifest.cjs 生成的一致
+          const osKey = os.platform() === 'darwin' ? 'mac' : os.platform() === 'win32' ? 'win' : 'linux'
+          const archKey = os.arch() === 'arm64' ? 'arm64' : os.arch() === 'ia32' ? 'ia32' : 'x64'
+          download = manifest.downloads?.[`${osKey}-${archKey}`]
         }
       } catch { /* manifest not available, show version info only */ }
       return {
@@ -625,7 +633,7 @@ ${navItems}
 
   ipcMain.handle('download-update', async (_e: Electron.IpcMainInvokeEvent, url: string, expectedSha256: string) => {
     try {
-      if (!validateDownloadUrl(url)) return { success: false, error: 'URL 不在白名单内，仅允许 https://github.com/crazytreeChen/ainovel-gui/releases/download/ 路径' }
+      if (!validateDownloadUrl(url)) return { success: false, error: `URL 不在白名单内，仅允许 https://github.com/${RELEASE_REPO}/releases/download/ 路径` }
       const crypto = require('crypto')
       const destDir = require('electron').app.getPath('downloads')
       const filename = url.split('/').pop() || 'ainovel-update'

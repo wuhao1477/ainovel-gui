@@ -4,17 +4,17 @@
   "release_date": "2026-07-06",
   "downloads": {
     "mac-arm64": {
-      "url": "https://github.com/crazytreeChen/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-mac-arm64.dmg",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-mac-arm64.dmg",
       "size": 0,
       "sha256": ""
     },
     "win-x64": {
-      "url": "https://github.com/crazytreeChen/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-win-x64.exe",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-win-x64.exe",
       "size": 0,
       "sha256": ""
     },
     "mac-arm64-zip": {
-      "url": "https://github.com/crazytreeChen/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-mac-arm64.zip",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-mac-arm64.zip",
       "size": 0,
       "sha256": ""
     }

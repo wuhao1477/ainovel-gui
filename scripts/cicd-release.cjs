@@ -179,7 +179,7 @@ function pushToRemote() {
 
   console.log('')
   info('GitHub Actions 将自动完成构建和 Release 发布')
-  info(`  查看进度: https://github.com/crazytreeChen/ainovel-gui/actions`)
+  info(`  查看进度: https://github.com/wuhao1477/ainovel-gui/actions`)
 }
 
 async function main() {
@@ -204,8 +204,8 @@ async function main() {
 
   header('🎉 CI/CD 触发完成')
   console.log(`  版本:   ${GREEN}v${version}${RESET}`)
-  console.log(`  Tag:    ${GREEN}https://github.com/crazytreeChen/ainovel-gui/releases/tag/v${version}${RESET}`)
-  console.log(`  Actions: ${BLUE}https://github.com/crazytreeChen/ainovel-gui/actions${RESET}`)
+  console.log(`  Tag:    ${GREEN}https://github.com/wuhao1477/ainovel-gui/releases/tag/v${version}${RESET}`)
+  console.log(`  Actions: ${BLUE}https://github.com/wuhao1477/ainovel-gui/actions${RESET}`)
   console.log('')
 }
 
