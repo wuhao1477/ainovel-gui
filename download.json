@@ -1,22 +1,121 @@
 {
   "version": "0.6.4",
   "release_notes": "## v0.6.4 更新内容\n\n### 创作工作台\n- 修复运行期同步错误归属到第一本书的问题，当前书籍会作为 run/usage/progress 同步目标\n- 即使尚未生成 progress.json，也会继续读取 run.json 与 usage.json，用于显示当前模型和 token\n- 修复创作进程退出后强制返回欢迎页的问题，保留当前工作台上下文并按快照状态切换\n- 修复完成态状态标签误显示为 READY 的问题\n\n### 验证\n- typecheck 已通过",
-  "release_date": "2026-07-06",
+  "release_date": "2026-08-29",
   "downloads": {
-    "mac-arm64": {
-      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-mac-arm64.dmg",
-      "size": 0,
-      "sha256": ""
+    "linux-arm64-rpm": {
+      "filename": "AINovel-0.6.4-linux-aarch64.rpm",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-linux-aarch64.rpm",
+      "size": 84272745,
+      "sha256": "41f66dabc6433ce68998143950bb75d28b996a9344e66c9c97b88130f6209adc"
     },
-    "win-x64": {
-      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-win-x64.exe",
-      "size": 0,
-      "sha256": ""
+    "linux-x64-deb": {
+      "filename": "AINovel-0.6.4-linux-amd64.deb",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-linux-amd64.deb",
+      "size": 89751462,
+      "sha256": "235e6846e3d43f4e2a36d38f89f6efed40f56d63132e77a243ba3b1bccd022d8"
+    },
+    "linux-arm64": {
+      "filename": "AINovel-0.6.4-linux-arm64.AppImage",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-linux-arm64.AppImage",
+      "size": 93840761,
+      "sha256": "8e5390df8535dd4b55350dde9130e8db7916e14e0b1fb743424977cb122643af"
+    },
+    "linux-arm64-deb": {
+      "filename": "AINovel-0.6.4-linux-arm64.deb",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-linux-arm64.deb",
+      "size": 84227844,
+      "sha256": "b6956e3c8a5f0cb4ee6521d174a5a9df3c1ea3b08e18a9b5786ec0e132f17a83"
+    },
+    "linux-arm64-targz": {
+      "filename": "AINovel-0.6.4-linux-arm64.tar.gz",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-linux-arm64.tar.gz",
+      "size": 122953041,
+      "sha256": "da05a155bbaf0a3611bfa950d22e732d275462ef83aa7f513bcd04b336f51381"
+    },
+    "linux-x64-targz": {
+      "filename": "AINovel-0.6.4-linux-x64.tar.gz",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-linux-x64.tar.gz",
+      "size": 123359233,
+      "sha256": "bda5e87176d1402dc75e543827e8cded8b784271c9866a52a4bbf24995e6c043"
+    },
+    "linux-x64": {
+      "filename": "AINovel-0.6.4-linux-x86_64.AppImage",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-linux-x86_64.AppImage",
+      "size": 100314155,
+      "sha256": "d49070e2e6e4664d4f90377aa016be3dc246e61deef7dd2f5c7254bff1500c42"
+    },
+    "linux-x64-rpm": {
+      "filename": "AINovel-0.6.4-linux-x86_64.rpm",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-linux-x86_64.rpm",
+      "size": 90012481,
+      "sha256": "a48f50b4d8b70a29dea7d082af13d3e6ddfe3a9c5ce81953369868ae27669ce6"
+    },
+    "mac-arm64": {
+      "filename": "AINovel-0.6.4-mac-arm64.dmg",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-mac-arm64.dmg",
+      "size": 114336682,
+      "sha256": "5d068f7be2c04d475a62f4349926a88fdaf550d7c26ebf7db0a8773e89fb7eea"
     },
     "mac-arm64-zip": {
+      "filename": "AINovel-0.6.4-mac-arm64.zip",
       "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-mac-arm64.zip",
-      "size": 0,
-      "sha256": ""
+      "size": 120610024,
+      "sha256": "ab1e75c3bbceb686c1cea213d1ebb516b1fe651732a83f55554617278d18929e"
+    },
+    "mac-x64": {
+      "filename": "AINovel-0.6.4-mac-x64.dmg",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-mac-x64.dmg",
+      "size": 118619155,
+      "sha256": "f65da15db8a571ce00464d38b95c78b9f64d1b50793f6579c781562804a0e34f"
+    },
+    "mac-x64-zip": {
+      "filename": "AINovel-0.6.4-mac-x64.zip",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-mac-x64.zip",
+      "size": 126362551,
+      "sha256": "fdb713de860127049f70eb088bdcbfa3a228c88ed7cc73bb364a57e240ca0c56"
+    },
+    "win-arm64": {
+      "filename": "AINovel-0.6.4-win-arm64.exe",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-win-arm64.exe",
+      "size": 109196539,
+      "sha256": "d7b045950721d85bbf3425d4957541423b68ef173ddbe2f7d28f9e145011122a"
+    },
+    "win-arm64-zip": {
+      "filename": "AINovel-0.6.4-win-arm64.zip",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-win-arm64.zip",
+      "size": 145503887,
+      "sha256": "6eeaa12e7bff314b8593960a549383ebb93967aa27184ed40e17dd5c31d5b0fd"
+    },
+    "win-ia32": {
+      "filename": "AINovel-0.6.4-win-ia32.exe",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-win-ia32.exe",
+      "size": 94266628,
+      "sha256": "830cd93b69d43f8b2105990b0fb4cd1df3f9c6927ac72f33f0d404d682130078"
+    },
+    "win-ia32-zip": {
+      "filename": "AINovel-0.6.4-win-ia32.zip",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-win-ia32.zip",
+      "size": 127867922,
+      "sha256": "6cc2a076d9b93aeafea5c53001c53eb87f4ed8a153e4c939875f1951faedb4fb"
+    },
+    "win-x64-portable": {
+      "filename": "AINovel-0.6.4-win-x64-portable.exe",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-win-x64-portable.exe",
+      "size": 107614709,
+      "sha256": "34b08bb03ca3976531930bcdef1c58f3e669cec06ec98fc8374248602c2d6651"
+    },
+    "win-x64": {
+      "filename": "AINovel-0.6.4-win-x64.exe",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-win-x64.exe",
+      "size": 108136374,
+      "sha256": "ee9dd34d72980c3e6ce517319c5185a07edabbc21ee07da404b37a5cc1b0a3bb"
+    },
+    "win-x64-zip": {
+      "filename": "AINovel-0.6.4-win-x64.zip",
+      "url": "https://github.com/wuhao1477/ainovel-gui/releases/download/v0.6.4/AINovel-0.6.4-win-x64.zip",
+      "size": 148098783,
+      "sha256": "0ec27b1220de05bedd073a7411a0353cfc6f2cd273155461ca28f49f50ae76c2"
     }
   }
 }
