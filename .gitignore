@@ -42,8 +42,8 @@ Thumbs.db
 # Electron / Vite build assets
 build/icon.iconset/
 
-# ainovel-cli 二进制（编译产物）
-build/ainovel-cli/bin/
+# ainovel-cli 二进制（编译产物，按架构分目录 + 宿主架构镜像）
+build/ainovel-cli/
 
 cicd/
 package-lock.json

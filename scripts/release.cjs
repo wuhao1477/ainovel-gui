@@ -248,25 +248,25 @@ function updateDownloadJson(artifacts) {
 
     if (name.includes('mac-arm64') && name.endsWith('.dmg')) {
       downloadData.downloads['mac-arm64'] = {
-        url: `https://github.com/crazytreeChen/ainovel-gui/releases/download/v${version}/${name}`,
+        url: `https://github.com/wuhao1477/ainovel-gui/releases/download/v${version}/${name}`,
         size: art.size,
         sha256: art.sha256,
       }
     } else if (name.includes('mac-arm64') && name.endsWith('.zip')) {
       downloadData.downloads['mac-arm64-zip'] = {
-        url: `https://github.com/crazytreeChen/ainovel-gui/releases/download/v${version}/${name}`,
+        url: `https://github.com/wuhao1477/ainovel-gui/releases/download/v${version}/${name}`,
         size: art.size,
         sha256: art.sha256,
       }
     } else if (name.includes('win') && name.endsWith('.exe')) {
       downloadData.downloads['win-x64'] = {
-        url: `https://github.com/crazytreeChen/ainovel-gui/releases/download/v${version}/${name}`,
+        url: `https://github.com/wuhao1477/ainovel-gui/releases/download/v${version}/${name}`,
         size: art.size,
         sha256: art.sha256,
       }
     } else if (name.includes('win') && name.endsWith('.zip')) {
       downloadData.downloads['win-x64-zip'] = {
-        url: `https://github.com/crazytreeChen/ainovel-gui/releases/download/v${version}/${name}`,
+        url: `https://github.com/wuhao1477/ainovel-gui/releases/download/v${version}/${name}`,
         size: art.size,
         sha256: art.sha256,
       }
@@ -360,7 +360,7 @@ function publishRelease(artifacts) {
         { timeout: 300000 }
       )
       ok(`Release ${tag} 发布成功!`)
-      ok(`  ${GREEN}https://github.com/crazytreeChen/ainovel-gui/releases/tag/${tag}${RESET}`)
+      ok(`  ${GREEN}https://github.com/wuhao1477/ainovel-gui/releases/tag/${tag}${RESET}`)
     } catch (e) {
       err(`发布失败: ${e.message}`)
       err('请手动执行:')
@@ -445,7 +445,7 @@ async function main() {
     console.log(`    - ${art.name} (${formatSize(art.size)})`)
   }
   if (!BUILD_ONLY) {
-    console.log(`  Release: ${GREEN}https://github.com/crazytreeChen/ainovel-gui/releases/tag/v${version}${RESET}`)
+    console.log(`  Release: ${GREEN}https://github.com/wuhao1477/ainovel-gui/releases/tag/v${version}${RESET}`)
   }
   console.log('')
 }

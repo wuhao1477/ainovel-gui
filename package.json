@@ -4,6 +4,11 @@
   "description": "AINovel - AI Novel Writing Desktop GUI (ainovel-cli 可视化界面)",
   "author": "crazytree",
   "license": "MIT",
+  "homepage": "https://github.com/wuhao1477/ainovel-gui",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wuhao1477/ainovel-gui.git"
+  },
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -17,13 +22,16 @@
     "postinstall": "node scripts/build-cli.cjs --check",
     "electron:dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && npm run build:cli && tsc -p electron/tsconfig.json && cross-env NODE_ENV=development electron dist-electron/main.js\"",
     "electron:start": "npm run build && electron dist-electron/main.js",
+    "build:cli:mac": "node scripts/build-cli.cjs --arch=x64 --arch=arm64",
+    "build:cli:win": "node scripts/build-cli.cjs --arch=x64 --arch=arm64 --arch=ia32",
+    "build:cli:linux": "node scripts/build-cli.cjs --arch=x64 --arch=arm64",
     "pack": "npm run build && electron-builder --dir",
-    "dist:mac": "npm run build && electron-builder --mac",
-    "dist:mac:opt": "npm run build:optimized && electron-builder --mac",
-    "dist:win": "npm run build && electron-builder --win",
-    "dist:win:opt": "npm run build:optimized && electron-builder --win",
-    "dist:linux": "npm run build && electron-builder --linux",
-    "dist:all": "npm run build && electron-builder --mac --win --linux",
+    "dist:mac": "npm run build && npm run build:cli:mac && electron-builder --mac",
+    "dist:mac:opt": "npm run build:optimized && npm run build:cli:mac && electron-builder --mac",
+    "dist:win": "npm run build && npm run build:cli:win && electron-builder --win",
+    "dist:win:opt": "npm run build:optimized && npm run build:cli:win && electron-builder --win",
+    "dist:linux": "npm run build && npm run build:cli:linux && electron-builder --linux",
+    "dist:all": "npm run build && node scripts/build-cli.cjs --arch=x64 --arch=arm64 --arch=ia32 && electron-builder --mac --win --linux",
     "release": "node scripts/release.cjs",
     "release:build-only": "node scripts/release.cjs --build-only",
     "release:dry-run": "node scripts/release.cjs --dry-run",
@@ -103,7 +111,7 @@
     ],
     "extraResources": [
       {
-        "from": "build/ainovel-cli/bin/",
+        "from": "build/ainovel-cli/${arch}/",
         "to": "ainovel-cli",
         "filter": [
           "**/*"
@@ -171,18 +179,31 @@
         {
           "target": "nsis",
           "arch": [
-            "x64"
+            "x64",
+            "arm64",
+            "ia32"
           ]
         },
         {
           "target": "zip",
+          "arch": [
+            "x64",
+            "arm64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "portable",
           "arch": [
             "x64"
           ]
         }
       ],
       "icon": "build/icon.ico",
-      "artifactName": "${productName}-${version}-win-x64.${ext}"
+      "artifactName": "${productName}-${version}-win-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-win-${arch}-portable.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -201,18 +222,43 @@
         {
           "target": "AppImage",
           "arch": [
-            "x64"
+            "x64",
+            "arm64"
           ]
         },
         {
           "target": "deb",
           "arch": [
-            "x64"
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64",
+            "arm64"
           ]
         }
       ],
       "category": "Office",
-      "icon": "build/icons"
+      "icon": "build/icons",
+      "maintainer": "crazytree <crazytree@users.noreply.github.com>",
+      "synopsis": "AI 小说创作桌面应用",
+      "description": "AINovel 是独立的桌面小说创作管理平台，内置 ainovel-cli AI 推理引擎，支持多book并行管理、大纲/章节/角色/时间线完整管理。",
+      "desktop": {
+        "Name": "AINovel",
+        "Comment": "AI 小说创作桌面应用",
+        "Categories": "Office;TextEditor;"
+      },
+      "artifactName": "${productName}-${version}-linux-${arch}.${ext}"
     }
   }
 }
