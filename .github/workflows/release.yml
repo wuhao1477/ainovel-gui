@@ -4,125 +4,211 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要发布的 tag（留空则只构建产物、不发布 Release）'
+        required: false
+        type: string
+      draft:
+        description: '以草稿形式创建 Release'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
+env:
+  NODE_VERSION: 22.12.0
+  # 覆盖 .npmrc 里的国内镜像：@electron/get 的取值优先级为
+  # npm_config_electron_mirror > ELECTRON_MIRROR，故必须用 npm_config_* 才能覆盖。
+  # GitHub runner 直连 GitHub Releases 更快更稳。
+  npm_config_electron_mirror: https://github.com/electron/electron/releases/download/
+  npm_config_electron_custom_dir: 'v{{ version }}'
+
 jobs:
-  release:
+  build:
+    name: Build ${{ matrix.name }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: macos
-            runner: macos-latest
-            target: mac
-          - platform: windows
-            runner: windows-latest
-            target: win
+          # macOS：在 arm64 runner 上交叉构建双架构。
+          # better-sqlite3 对 darwin-x64/arm64 均有 Electron ABI 预编译产物，
+          # 无需本机编译；未配置签名，故不存在架构相关的签名限制。
+          - name: macOS (x64 + arm64)
+            os: macos-latest
+            platform: mac
+            cli_archs: --arch=x64 --arch=arm64
+          # Windows：x64 runner 交叉构建 x64/arm64/ia32
+          - name: Windows (x64 + arm64 + ia32)
+            os: windows-latest
+            platform: win
+            cli_archs: --arch=x64 --arch=arm64 --arch=ia32
+          # Linux：必须用 x64 runner —— electron-builder 的 fpm（deb/rpm 打包器）
+          # 只提供 linux-x86_64 版本，无 aarch64 变体，arm64 包只能交叉打包。
+          - name: Linux (x64 + arm64)
+            os: ubuntu-latest
+            platform: linux
+            cli_archs: --arch=x64 --arch=arm64
 
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22.12.0
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: Setup Go 1.21
-        uses: actions/setup-go@v5
-        env:
-          GOPROXY: https://goproxy.cn,direct
+      # 版本跟随 engine/go.mod，避免与 go 指令声明的版本脱节
+      - name: Setup Go
+        uses: actions/setup-go@v7
         with:
-          go-version: '1.21'
-          cache: true
+          go-version-file: engine/go.mod
+          cache-dependency-path: engine/go.sum
 
-      # 全局注入Go PATH，解决macOS后续步骤找不到go命令
-      - name: Inject Go PATH & Check Version
+      - name: Install Linux packaging tools
+        if: matrix.platform == 'linux'
         run: |
-          echo "GOROOT=$GOROOT" >> $GITHUB_ENV
-          echo "PATH=$GOROOT/bin:$PATH" >> $GITHUB_ENV
-          go version
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends rpm fakeroot
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Build ainovel-cli binary
-        run: npm run build:cli
+      # 仓库里追踪了一个 macOS arm64 的 ainovel-cli 二进制。
+      # 不清掉的话它会被 extraResources 的 **/* 一并打进其他平台的包里。
+      - name: Clean stale CLI binaries
+        shell: bash
+        run: rm -rf build/ainovel-cli
 
-      - name: Build renderer & electron
-        run: npm run build
+      - name: Build ainovel-cli (per arch)
+        run: node scripts/build-cli.cjs ${{ matrix.cli_archs }} --no-upx
 
-      - name: Build ${{ matrix.platform }}
-        run: npx electron-builder --${{ matrix.target }} --publish never
+      - name: Verify CLI binaries
+        shell: bash
+        run: |
+          echo "build/ainovel-cli 内容："
+          find build/ainovel-cli -type f -print0 | while IFS= read -r -d '' f; do
+            printf '  %s\n' "$f"
+          done
+          # 每个目标架构都必须有产物，否则该架构的应用会缺少引擎
+          for a in $(echo "${{ matrix.cli_archs }}" | tr ' ' '\n' | sed 's/--arch=//'); do
+            if ! ls "build/ainovel-cli/$a/"ainovel-cli* >/dev/null 2>&1; then
+              echo "::error::缺少 $a 架构的 ainovel-cli 二进制"
+              exit 1
+            fi
+          done
+
+      - name: Build renderer & electron main
+        run: npm run build:renderer && npm run build:electron
+
+      - name: Package ${{ matrix.platform }}
+        run: npx electron-builder --${{ matrix.platform }} --publish never
         env:
+          # 无 Apple 开发者证书，跳过签名自动发现，否则 macOS 构建会卡在查找身份
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List artifacts
+        shell: bash
+        run: ls -lh release/ || true
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.platform }}-artifacts
           path: |
             release/*.dmg
             release/*.zip
             release/*.exe
+            release/*.msi
             release/*.AppImage
             release/*.deb
-          retention-days: 7
+            release/*.rpm
+            release/*.tar.gz
+          if-no-files-found: error
+          retention-days: 14
 
   publish:
-    needs: release
+    name: Publish Release
+    needs: build
     runs-on: ubuntu-latest
+    # tag 推送时自动发布；手动触发只有显式传了 tag 才发布
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22.12.0
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: ./artifacts
 
-      - name: Move artifacts to release/
+      # download-artifact 会按 artifact 名建子目录，这里摊平到 release/
+      - name: Collect artifacts
         run: |
           mkdir -p release
-          cp artifacts/*/* release/ 2>/dev/null || true
+          find artifacts -type f -exec mv -n {} release/ \;
+          ls -lh release/
 
-      - name: Generate release notes from download.json
-        id: notes
+      - name: Resolve tag
+        id: tag
         run: |
-          node -e "
-            const dd = require('./download.json');
-            console.log(dd.release_notes || '');
-          " > release-notes.md
-          echo "notes=$(cat release-notes.md)" >> $GITHUB_OUTPUT
+          TAG="${{ inputs.tag }}"
+          if [ -z "$TAG" ]; then TAG="${GITHUB_REF_NAME}"; fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "解析到 tag: $TAG"
+
+      - name: Generate checksums
+        run: |
+          cd release
+          # 排除自身，避免重跑时把校验和文件算进去
+          find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -printf '%f\0' \
+            | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Build release notes
+        run: node scripts/build-release-notes.cjs --tag "${{ steps.tag.outputs.tag }}" --out release-notes.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.ref_name }}
-          name: AINovel ${{ github.ref_name }}
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: AINovel ${{ steps.tag.outputs.tag }}
           body_path: release-notes.md
           files: release/*
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-' ) }}
+          draft: ${{ inputs.draft == true }}
+          prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit updated download.json
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add download.json
-          git commit -m "chore: 更新 download.json for ${{ github.ref_name }}" || true
-          git push
+          # tag 构建时 HEAD 处于分离状态，需切回默认分支再提交
+          DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
+          git fetch origin "$DEFAULT_BRANCH"
+          git checkout -B "$DEFAULT_BRANCH" "origin/$DEFAULT_BRANCH"
+          node scripts/update-download-manifest.cjs --tag "${{ steps.tag.outputs.tag }}"
+          if git diff --quiet download.json; then
+            echo "download.json 无变化，跳过提交"
+          else
+            git add download.json
+            git commit -m "chore: 更新 download.json for ${{ steps.tag.outputs.tag }}"
+            git push origin "$DEFAULT_BRANCH"
+          fi

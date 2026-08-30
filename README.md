@@ -80,20 +80,21 @@ npm run electron:dev
 ### 生产构建
 
 ```bash
-# macOS DMG
+# macOS DMG / ZIP（x64 + arm64）
 npm run dist:mac
 
-# Windows NSIS 安装包
+# Windows NSIS / ZIP / 便携版（x64 + arm64 + ia32）
 npm run dist:win
 
-# Linux
+# Linux AppImage / DEB / RPM / tar.gz（x64 + arm64）
 npm run dist:linux
-
-# 全部平台
-npm run dist:all
 ```
 
 构建产物位于 `release/` 目录。
+
+以上命令会先按目标架构编译 `ainovel-cli`（需要 Go，版本见 `engine/go.mod`），再交给
+electron-builder 打包。跨平台打包受宿主限制：Linux 的 DEB/RPM 依赖 `fpm`（仅 x86_64 Linux
+可用）和 `rpm`/`fakeroot`，在 macOS 上无法产出；完整的全平台产物请交给 GitHub Actions。
 
 ## 项目结构
 
@@ -204,9 +205,9 @@ npm run build:electron   # 仅构建主进程
 npm run electron:dev     # 开发模式（Vite + Electron 并行）
 npm run electron:start   # 生产模式启动
 npm run pack             # 打包到目录（不打包安装程序）
-npm run dist:mac         # 构建 macOS DMG/ZIP
-npm run dist:win         # 构建 Windows NSIS/ZIP
-npm run dist:linux       # 构建 Linux AppImage/DEB
+npm run dist:mac         # 构建 macOS DMG/ZIP（x64 + arm64）
+npm run dist:win         # 构建 Windows NSIS/ZIP/便携版（x64 + arm64 + ia32）
+npm run dist:linux       # 构建 Linux AppImage/DEB/RPM/tar.gz（x64 + arm64）
 npm run dist:all         # 构建全部平台
 npm run release          # 一键编译 + 发布 GitHub Release
 npm run release:build-only  # 仅编译，不发布
@@ -237,10 +238,22 @@ npm run generate-icons   # 从 SVG 生成多尺寸图标
 | 平台 | 分发格式 | 架构 |
 |------|---------|------|
 | macOS | DMG / ZIP | x64 + arm64 |
-| Windows | NSIS 安装包 / ZIP | x64 |
-| Linux | AppImage / DEB | x64 |
+| Windows | NSIS 安装包 / ZIP / 便携版 | x64 + arm64 + ia32 |
+| Linux | AppImage / DEB / RPM / tar.gz | x64 + arm64 |
 
 支持三平台自动构建，`ainovel-cli` 二进制通过 `extraResources` 随应用一起打包分发。
+
+`ainovel-cli` 是纯 Go（无 CGO），按目标架构交叉编译到 `build/ainovel-cli/<arch>/`，
+`extraResources` 用 `${arch}` 宏引用，保证每个架构的安装包内嵌的都是自己架构的引擎二进制。
+
+推送 `v*` tag 即触发 GitHub Actions 构建全部平台产物并发布 Release：
+
+```bash
+npm run cicd            # bump 版本 → commit → tag → push（CI 自动构建发布）
+npm run cicd:dry        # 干跑预览
+```
+
+也可在 Actions 页手动触发 `Release` workflow：留空 tag 只构建产物不发布，填入 tag 则同时发布 Release。
 
 ---
 
